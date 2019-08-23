@@ -19,7 +19,8 @@ import piksi_rtk_msgs # TODO(rikba): If we dont have this I get NameError: globa
 from piksi_rtk_msgs.msg import (AgeOfCorrections, BaselineEcef, BaselineHeading, BaselineNed, BasePosEcef, BasePosLlh,
                                 DeviceMonitor_V2_3_15, DopsMulti, GpsTimeMulti, Heartbeat, ImuRawMulti,
                                 InfoWifiCorrections, Log, MagRaw, MeasurementState_V2_4_1, Observation, PosEcef, PosLlhMulti,
-                                ReceiverState_V2_4_1, UartState_V2_3_15, UtcTimeMulti, VelEcef, VelNed)
+                                ReceiverState_V2_4_1, UartState_V2_3_15, UtcTimeMulti, VelEcef, VelNed, VelBody, OrientQuat,
+                                OrientEul, AngularRate)
 from piksi_rtk_msgs.srv import *
 from geometry_msgs.msg import (PoseWithCovarianceStamped, PointStamped, PoseWithCovariance, Point, TransformStamped,
                                Transform)
@@ -228,6 +229,11 @@ class PiksiMulti:
         self.handler.add_callback(self.cb_sbp_measurement_state, msg_type=SBP_MSG_MEASUREMENT_STATE)
         self.handler.add_callback(self.cb_sbp_uart_state, msg_type=SBP_MSG_UART_STATE)
         self.handler.add_callback(self.cb_sbp_utc_time, msg_type=SBP_MSG_UTC_TIME)
+        
+        self.handler.add_callback(self.cb_sbp_vel_body, msg_type=SBP_MSG_VEL_BODY)
+        self.handler.add_callback(self.cb_sbp_orient_quat, msg_type=SBP_MSG_ORIENT_QUAT)
+        self.handler.add_callback(self.cb_sbp_orient_euler, msg_type=SBP_MSG_ORIENT_EULER)
+        self.handler.add_callback(self.cb_sbp_angular_rate, msg_type=SBP_MSG_ANGULAR_RATE)
 
         # Callbacks generated "automatically".
         self.init_callback('baseline_ecef_multi', BaselineEcef,
@@ -373,7 +379,14 @@ class PiksiMulti:
                                                            AgeOfCorrections, queue_size=10)
         publishers['enu_pose_best_fix'] = rospy.Publisher(rospy.get_name() + '/enu_pose_best_fix',
                                                           PoseWithCovarianceStamped, queue_size=10)
-
+        publishers['vel_body'] = rospy.Publisher(rospy.get_name() + '/vel_body',
+                                                 VelBody, queue_size=10)
+        publishers['orient_quat'] = rospy.Publisher(rospy.get_name() + '/orient_quat', OrientQuat, queue_size=10)
+        
+        publishers['orient_eul'] = rospy.Publisher(rospy.get_name() + '/orient_eul', OrientEul, queue_size=10)
+        
+        publishers['angular_rate'] = rospy.Publisher(rospy.get_name() + '/angular_rate', AngularRate, queue_size=10)
+        
         # Raw IMU and Magnetometer measurements.
         if self.publish_raw_imu_and_mag:
             publishers['imu_raw'] = rospy.Publisher(rospy.get_name() + '/imu_raw',
@@ -525,6 +538,76 @@ class PiksiMulti:
             pub = self.publishers[topic_name]
             callback_function = self.make_callback(callback_data_type, ros_message, pub, attrs)
             self.handler.add_callback(callback_function, msg_type=sbp_msg_type)
+
+    def cb_sbp_vel_body(self, msg_raw, **metadata):
+        msg = MsgVelBody(msg_raw)
+
+        vel_body_msg = VelBody()
+        vel_body_msg.header.stamp = rospy.Time.now()
+
+        vel_body_msg.tow = msg.tow
+        vel_body_msg.x = msg.x
+        vel_body_msg.y = msg.y
+        vel_body_msg.z = msg.z
+        vel_body_msg.cov_x_x = msg.cov_x_x
+        vel_body_msg.cov_x_y = msg.cov_x_y
+        vel_body_msg.cov_x_z = msg.cov_x_z
+        vel_body_msg.cov_y_y = msg.cov_y_y
+        vel_body_msg.cov_y_z = msg.cov_y_z
+        vel_body_msg.cov_z_z = msg.cov_z_z
+        vel_body_msg.n_sats = msg.n_sats
+        vel_body_msg.flags = msg.flags
+
+        self.publishers['vel_body'].publish(vel_body_msg)
+
+    def cb_sbp_orient_quat(self, msg_raw, **metadata):
+        msg = MsgOrientQuat(msg_raw)
+        
+        orient_quat_msg = OrientQuat()
+        orient_quat_msg.header.stamp = rospy.Time.now()
+        
+        orient_quat_msg.tow = msg.tow
+        orient_quat_msg.w = msg.w
+        orient_quat_msg.x = msg.x
+        orient_quat_msg.y = msg.y
+        orient_quat_msg.z = msg.z
+        orient_quat_msg.w_accuracy = msg.w_accuracy
+        orient_quat_msg.x_accuracy = msg.x_accuracy
+        orient_quat_msg.y_accuracy = msg.y_accuracy
+        orient_quat_msg.z_accuracy = msg.z_accuracy
+
+        self.publishers['orient_quat'].publish(orient_quat_msg)
+
+    def cb_sbp_orient_eul(self, msg_raw, **metadata):
+        msg = MsgOrientEuler(msg_raw)
+
+        orient_euler_msg = OrientEul()
+        orient_euler_msg.header.stamp = rospy.Time.now()
+
+        orient_euler_msg.tow = msg.tow
+        orient_euler_msg.roll = msg.roll
+        orient_euler_msg.pitch = msg.pitch
+        orient_euler_msg.yaw = msg.yaw
+        orient_euler_msg.roll_accuracy = msg.roll_accuracy
+        orient_euler_msg.pitch_accuracy = msg.pitch_accuracy
+        orient_euler_msg.yaw_accuracy = msg.yaw_accuracy
+        orient_euler_msg.flags = msg.flags
+
+        self.publishers['orient_eul'].publish(orient_euler_msg)
+
+    def cb_sbp_angular_rate(self, msg_raw, **metadata):
+        msg = MsgAngularRate(msg_raw)
+
+        angular_rate_msg = AngularRate()
+        angular_rate_msg.header.stamp = rospy.Time.now()
+
+        angular_rate_msg.tow = msg.tow
+        angular_rate_msg.x = msg.x
+        angular_rate_msg.y = msg.y
+        angular_rate_msg.z = msg.z
+        angular_rate_msg.flags = msg.flags
+
+        self.publishers['angular_rate'].publish(angular_rate_msg)
 
     def cb_sbp_obs(self, msg_raw, **metadata):
         if self.debug_mode:
