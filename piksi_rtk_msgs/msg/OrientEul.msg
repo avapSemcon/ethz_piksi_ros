@@ -5,9 +5,9 @@
 Header header
 
 uint32 tow              # GPS time of week [ms]
-float64 roll            # Rotation about the forward axis of the vehicle [uDeg]
-float64 pitch           # Rotation about the rightward axis of the vehicle [uDeg]
-float64 yaw             # Rotation about the downward axis of the vehicle [uDeg]
+int32 roll              # Rotation about the forward axis of the vehicle [uDeg]
+int32 pitch             # Rotation about the rightward axis of the vehicle [uDeg]
+int32 yaw               # Rotation about the downward axis of the vehicle [uDeg]
 float64 roll_accuracy   # Estimated standard deviation of roll [Deg]
 float64 pitch_accuracy  # Estimated standard deviation of pitch [Deg]
 float64 yaw_accuracy    # Estimated standard deviation of yaw [Deg]

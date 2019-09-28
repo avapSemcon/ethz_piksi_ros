@@ -819,6 +819,7 @@ class PiksiMulti:
         elif msg.flags == 8:
             rospy.logwarn(
                 "msg.flags = 8, Added 2019-09-25 by DD to remove the error. NTRIP:Conection unresponsive. ")
+            self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
         
         elif msg.flags == 9:
             rospy.logwarn(
