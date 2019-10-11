@@ -822,8 +822,8 @@ class PiksiMulti:
         
         elif msg.flags == 9:
             rospy.logwarn(
-                "msg.flags = 9, Added 2019-09-08 by DD to remove the error. Probably a bad idea.")
-            self.publish_rtk_fix(msg.lat, msg.lon, msg.height, stamp)
+                "msg.flags = 9, Added 2019-09-08 by DD. CONSOLE: Base observation fropped due to insufficient satellites")
+            self.publish_float_fix(msg.lat, msg.lon, msg.height, stamp)
             
         elif msg.flags == PosLlhMulti.FIX_MODE_DEAD_RECKONING:
             rospy.logwarn(
@@ -837,8 +837,11 @@ class PiksiMulti:
         # RTK messages.
         elif msg.flags == PosLlhMulti.FIX_MODE_FLOAT_RTK:
             # For now publish RTK float only in debug mode.
-            if self.debug_mode:
-                self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
+            # if self.debug_mode:
+            #     self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
+
+            # Added by DD 2019-10-11. Want position data even during float. 
+            self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
         elif msg.flags == 12:
             # Use first RTK fix to set origin ENU frame, if it was not set by rosparam.
             if not self.origin_enu_set:
