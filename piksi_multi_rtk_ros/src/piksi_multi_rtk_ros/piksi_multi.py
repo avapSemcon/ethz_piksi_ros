@@ -335,6 +335,8 @@ class PiksiMulti:
 
         publishers['rtk_fix'] = rospy.Publisher(rospy.get_name() + '/navsatfix_rtk_fix',
                                                 NavSatFix, queue_size=10)
+        publishers['rtk_float'] = rospy.Publisher(rospy.get_name() + '/navsatfix_rtk_float',
+                                                      NavSatFix, queue_size=10) # Added by DD 2019-10-12
         publishers['spp'] = rospy.Publisher(rospy.get_name() + '/navsatfix_spp',
                                             NavSatFix, queue_size=10)
         publishers['best_fix'] = rospy.Publisher(rospy.get_name() + '/navsatfix_best_fix',
@@ -362,6 +364,12 @@ class PiksiMulti:
         publishers['enu_point_fix'] = rospy.Publisher(rospy.get_name() + '/enu_point_fix',
                                                       PointStamped, queue_size=10)
         publishers['enu_transform_fix'] = rospy.Publisher(rospy.get_name() + '/enu_transform_fix',
+                                                          TransformStamped, queue_size=10)
+        publishers['enu_pose_float'] = rospy.Publisher(rospy.get_name() + '/enu_pose_float',
+                                                     PoseWithCovarianceStamped, queue_size=10)
+        publishers['enu_point_float'] = rospy.Publisher(rospy.get_name() + '/enu_point_float',
+                                                      PointStamped, queue_size=10)
+        publishers['enu_transform_float'] = rospy.Publisher(rospy.get_name() + '/enu_transform_float',
                                                           TransformStamped, queue_size=10)
         publishers['enu_pose_spp'] = rospy.Publisher(rospy.get_name() + '/enu_pose_spp',
                                                      PoseWithCovarianceStamped, queue_size=10)
@@ -792,6 +800,14 @@ class PiksiMulti:
                 stamp = self.tow_to_utc(msg.tow)
 
         # Invalid messages.
+
+        if self.debug_mode:
+            print "Current msg.flags == ", msg.flags
+        
+        # print "Current msg.flags == ", msg.flags
+        # print "msg.flags FIX_MODE_FLOAT_RTK == ", PosLlhMulti.FIX_MODE_FLOAT_RTK
+        # print "msg.flags FIX_MODE_FIX_RTK == ", PosLlhMulti.FIX_MODE_FIX_RTK
+        
         if msg.flags == PosLlhMulti.FIX_MODE_INVALID:
             return
         # SPP GPS messages.
@@ -807,24 +823,25 @@ class PiksiMulti:
         # RTK messages.
         elif msg.flags == PosLlhMulti.FIX_MODE_FLOAT_RTK:
             # For now publish RTK float only in debug mode.
-            if self.debug_mode:
-                self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
+            # if self.debug_mode:
+            #     self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
+
+            # <--- Added by DD 2019-10-11. Want position data even during float.... 
+            # Use first RTK fix to set origin ENU frame, if it was not set by rosparam.
+            if not self.origin_enu_set:
+                self.init_geodetic_reference(msg.lat, msg.lon, msg.height)
+
+            self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
+            # ---> Added by DD 2019-10-11. Want position data even during float. 
+            
         elif msg.flags == PosLlhMulti.FIX_MODE_FIX_RTK:
             # Use first RTK fix to set origin ENU frame, if it was not set by rosparam.
             if not self.origin_enu_set:
                 self.init_geodetic_reference(msg.lat, msg.lon, msg.height)
 
             self.publish_rtk_fix(msg.lat, msg.lon, msg.height, stamp)
+
         # Dead reckoning
-        elif msg.flags == 8:
-            rospy.logwarn(
-                "msg.flags = 8, Added 2019-09-25 by DD to remove the error. NTRIP:Conection unresponsive. ")
-        
-        elif msg.flags == 9:
-            rospy.logwarn(
-                "msg.flags = 9, Added 2019-09-08 by DD. CONSOLE: Base observation fropped due to insufficient satellites")
-            self.publish_float_fix(msg.lat, msg.lon, msg.height, stamp)
-            
         elif msg.flags == PosLlhMulti.FIX_MODE_DEAD_RECKONING:
             rospy.logwarn(
                 "[cb_sbp_pos_llh]: case FIX_MODE_DEAD_RECKONING was not implemented yet." +
@@ -835,25 +852,42 @@ class PiksiMulti:
             self.publish_spp(msg.lat, msg.lon, msg.height, stamp, self.var_spp_sbas, NavSatStatus.STATUS_SBAS_FIX)
         # Our Message flag values
         # RTK messages.
-        elif msg.flags == PosLlhMulti.FIX_MODE_FLOAT_RTK:
+                
+        elif msg.flags == 8:
+            rospy.logwarn(
+                "msg.flags = 8, Added 2019-09-25 by DD to remove the error. NTRIP:Conection unresponsive. ")
+        
+        elif msg.flags == 9:
+            rospy.logwarn(
+                "msg.flags = 9, Added 2019-09-08 by DD. CONSOLE: Base observation fropped due to insufficient satellites")
+            self.publish_float_fix(msg.lat, msg.lon, msg.height, stamp)
+
+        elif msg.flags == 10:
+            rospy.logwarn(
+                "[cb_sbp_pos_llh]: case msg.flags == " + str(msg.flags) + " was not implemented yet." +
+                "Contact the package/repository maintainers.")
+            
+        elif msg.flags == 11:
             # For now publish RTK float only in debug mode.
             # if self.debug_mode:
             #     self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
 
-            # Added by DD 2019-10-11. Want position data even during float. 
+            # <--- Added by DD 2019-10-11. Want position data even during float.... 
+            # Use first RTK fix to set origin ENU frame, if it was not set by rosparam.
+            if not self.origin_enu_set:
+                self.init_geodetic_reference(msg.lat, msg.lon, msg.height)
+
             self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
+            # ---> Added by DD 2019-10-11. Want position data even during float. 
+
+            
         elif msg.flags == 12:
             # Use first RTK fix to set origin ENU frame, if it was not set by rosparam.
             if not self.origin_enu_set:
                 self.init_geodetic_reference(msg.lat, msg.lon, msg.height)
 
             self.publish_rtk_fix(msg.lat, msg.lon, msg.height, stamp)
-        # Dead reckoning
-        elif msg.flags == PosLlhMulti.FIX_MODE_DEAD_RECKONING:
-            rospy.logwarn(
-                "[cb_sbp_pos_llh]: case FIX_MODE_DEAD_RECKONING was not implemented yet." +
-                "Contact the package/repository maintainers.")
-            return
+
         elif msg.flags == 13:
             rospy.logwarn(
                 "msg.flags = 13, Added 2019-09-08 by DD to remove the error. Probably a bad idea.")
@@ -862,10 +896,7 @@ class PiksiMulti:
         # SBAS Position
         elif msg.flags == 14:
             self.publish_spp(msg.lat, msg.lon, msg.height, stamp, self.var_spp_sbas, NavSatStatus.STATUS_SBAS_FIX)
-        elif msg.flags == 11:
-            # For now publish RTK float only in debug mode.
-            if self.debug_mode:
-                self.publish_rtk_float(msg.lat, msg.lon, msg.height, stamp)
+
         else:
             print msg.flags
             rospy.logerr(
