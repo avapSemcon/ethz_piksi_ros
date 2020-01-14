@@ -4,8 +4,8 @@
   <version>0.0.0</version>
   <description>Tools to synchronize against the GPS clock.</description>
 
-  <author email="brik@ethz.ch">Rik Bähnemann</author>
-  <maintainer email="brik@ethz.ch">Rik Bähnemann</maintainer>
+  <author email="brik@ethz.ch">Rik Bahnemann</author>
+  <maintainer email="brik@ethz.ch">Rik Bahnemann</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>

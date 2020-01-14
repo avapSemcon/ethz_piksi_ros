@@ -10,11 +10,11 @@ uint32 tow         # GPS Time of week [ms].
 int32 x            # Velocity in x direction [mm/s]
 int32 y            # Velocity in y direction [mm/s]
 int32 z            # Velocity in z direction [mm/s]
-float64 cov_x_x    # Estimated variance of x [m²]
-float64 cov_x_y    # Estimated variance of x and y [m²]
-float64 cov_x_z    # Estimated variance of x and z [m²]
-float64 cov_y_y    # Estimated variance of y [m²]
-float64 cov_y_z    # Estimated variance of y and z [m²]
-float64 cov_z_z    # Estimated variance of z [m²]
+float64 cov_x_x    # Estimated variance of x [m2]
+float64 cov_x_y    # Estimated variance of x and y [m2]
+float64 cov_x_z    # Estimated variance of x and z [m2]
+float64 cov_y_y    # Estimated variance of y [m2]
+float64 cov_y_z    # Estimated variance of y and z [m2]
+float64 cov_z_z    # Estimated variance of z [m2]
 uint8 n_sats       # Number if satellites used in solution
 uint8 flags        # Status flags
